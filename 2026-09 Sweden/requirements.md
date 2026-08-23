@@ -99,7 +99,7 @@ is unaffected: wherever the city nights fall, they must not be the arrival weeke
 
 ---
 
-## 6. Base selection criteria
+## 6. Base (and hotel) selection criteria
 
 Ranked. Criterion 1 is a hard requirement, not a tiebreak — an earlier iteration
 optimised for position and produced a base that was well-located but visually plain,
@@ -112,8 +112,10 @@ which was rejected.
    directions from the base (i.e. it must sit between the two clusters of interest).
 3. **Architecture and design of the property.**
 4. **Isolation and views** from the room.
-5. **Sauna / water access** — strong bonus, not required.
-6. **Guest rating** as a tiebreak.
+5. **Private outdoor space** available in the hotel or the airbnb.
+6. **Sauna / water access** — strong bonus, not required.
+7. **Guest rating** as a tiebreak.
+
 
 **Accepted trade:** ~20 minutes added to each day trip in exchange for a materially
 prettier base. Judged worth it for a honeymoon.
