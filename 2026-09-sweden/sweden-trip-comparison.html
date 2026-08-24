@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sweden August 2026 &mdash; Coast or Lakes?</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#f8f6f0;--panel:#ffffff;--ink:#20231c;--ink-2:#565a4d;--ink-3:#848a76;
+  --line:#e4e2d6;--line-2:#d0cebd;--chip:#eeece1;
+  --moss:#3d5c3a;--amber:#b07d2b;--rust:#9c5330;--water:#3c6f82;
+  --ok:#3d6b47;--bad:#994330;
+  --coast:#3c6f82;--inland:#3d5c3a;
+  --shadow:0 1px 2px rgba(32,35,28,.06),0 8px 24px rgba(32,35,28,.06);
+  --dg-sea:#dbe7ec;--dg-land:#e9e7da;--dg-lake:#cfe0e7;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13150f;--panel:#1c1e16;--ink:#eef0e4;--ink-2:#b3b6a4;--ink-3:#868a76;
+  --line:#2b2e22;--line-2:#3b3e2e;--chip:#23261c;
+  --moss:#8fbb87;--amber:#dfb75c;--rust:#dd9068;--water:#77b6cb;
+  --ok:#8fbb87;--bad:#dd9068;
+  --coast:#77b6cb;--inland:#8fbb87;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  --dg-sea:#1a2429;--dg-land:#242619;--dg-lake:#1f3037;
+}}
+:root[data-theme="dark"]{
+  --bg:#13150f;--panel:#1c1e16;--ink:#eef0e4;--ink-2:#b3b6a4;--ink-3:#868a76;
+  --line:#2b2e22;--line-2:#3b3e2e;--chip:#23261c;
+  --moss:#8fbb87;--amber:#dfb75c;--rust:#dd9068;--water:#77b6cb;
+  --ok:#8fbb87;--bad:#dd9068;
+  --coast:#77b6cb;--inland:#8fbb87;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  --dg-sea:#1a2429;--dg-land:#242619;--dg-lake:#1f3037;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font:16px/1.65 ui-serif,Georgia,"Iowan Old Style","Times New Roman",serif}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.25;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:600}
+h2{font-size:clamp(21px,2.6vw,28px);font-weight:600;margin:0 0 4px}
+h3{font-size:19px;font-weight:600}
+p{margin:0 0 14px}
+a{color:var(--water);text-underline-offset:2px}
+section{padding:44px 0;border-bottom:1px solid var(--line)}
+header{padding:56px 0 30px;border-bottom:1px solid var(--line)}
+.kicker{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;letter-spacing:.16em;
+ text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.lede{font-size:19px;color:var(--ink-2);max-width:64ch;margin-top:16px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.fact{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;background:var(--chip);
+ border:1px solid var(--line);border-radius:999px;padding:5px 13px;color:var(--ink-2)}
+.sub{color:var(--ink-3);font-family:ui-sans-serif,-apple-system,sans-serif;font-size:14px;margin-bottom:22px}
+
+.nav{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--line);
+ font-family:ui-sans-serif,-apple-system,sans-serif;padding:0 20px}
+.nav-inner{max-width:1120px;margin:0 auto;display:flex;overflow-x:auto}
+.nav a{display:flex;align-items:center;padding:13px 18px;font-size:13.5px;font-weight:600;
+ color:var(--ink-3);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent}
+.nav a.coast{border-bottom-color:var(--coast);color:var(--coast)}
+.nav a.inland{border-bottom-color:var(--inland);color:var(--inland)}
+
+/* at a glance diagram */
+.dg-wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:34px;align-items:center;margin-top:26px}
+.diagram{width:100%;height:auto;border-radius:14px;border:1px solid var(--line);display:block}
+.dg-sea{fill:var(--dg-sea)}
+.dg-land{fill:var(--dg-land)}
+.dg-lake{fill:var(--dg-lake)}
+.dg-zone ellipse{fill-opacity:.17;stroke-width:1.8;stroke-dasharray:5 4}
+.dg-zone-coast ellipse{fill:var(--coast);stroke:var(--coast)}
+.dg-zone-inland ellipse{fill:var(--inland);stroke:var(--inland)}
+.dg-pin{fill:var(--ink);fill-opacity:.75}
+.dg-hub{fill:var(--rust)}
+.dg-lbl{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;fill:var(--ink-2)}
+.dg-lbl-hub{fill:var(--rust);font-weight:600}
+.dg-water{font-family:ui-serif,Georgia,serif;font-style:italic;font-size:15px;
+ fill:var(--water);fill-opacity:.75;text-anchor:middle}
+.dg-sea-lbl{text-anchor:start}
+.dg-zt{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;font-weight:700;
+ letter-spacing:.1em;text-anchor:middle}
+.dg-zt-sm{font-size:11.5px;font-weight:500;letter-spacing:.02em;opacity:.8}
+.dg-zt-coast{fill:var(--coast)}
+.dg-zt-inland{fill:var(--inland)}
+.dg-side h3{margin-bottom:6px}
+.dg-side .tag{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:11px;font-weight:700;
+ letter-spacing:.12em;text-transform:uppercase}
+.dg-block{margin-bottom:26px}
+.dg-block p{color:var(--ink-2);font-size:15px;margin:0 0 12px}
+.dg-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.dg-strip figure{position:relative;margin:0;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--chip)}
+.dg-strip img{width:100%;height:100%;object-fit:cover;display:block}
+.dg-strip figcaption{position:absolute;inset:auto 0 0 0;padding:16px 6px 5px;color:#fff;
+ background:linear-gradient(to top,rgba(0,0,0,.7),transparent);
+ font-family:ui-sans-serif,-apple-system,sans-serif;font-size:10.5px;font-weight:600;
+ text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* place gallery */
+.pgal{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;grid-auto-flow:dense}
+.pgal figure{position:relative;margin:0;aspect-ratio:1;border-radius:11px;overflow:hidden;
+ background:var(--chip)}
+.pgal figure.wide{grid-column:span 2;aspect-ratio:2}
+.pgal img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.pgal figure:hover img{transform:scale(1.045)}
+.pgal figcaption{position:absolute;inset:auto 0 0 0;padding:30px 13px 11px;color:#fff;
+ background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.28) 55%,transparent);
+ font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13.5px;font-weight:600;
+ letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.pgal figcaption span{display:block;font-weight:400;font-size:11.5px;opacity:.85;margin-top:1px}
+
+/* divider */
+.divider{padding:40px 20px;text-align:center;background:var(--chip);border-bottom:1px solid var(--line)}
+.divider h2{font-size:clamp(24px,3.4vw,34px)}
+.divider p{color:var(--ink-3);margin:6px 0 0;font-size:15px}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sec-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.option-intro{max-width:70ch;color:var(--ink-2);margin-top:22px}
+
+/* map */
+.maprow{display:grid;grid-template-columns:1fr 268px;gap:16px}
+.map{height:480px;border-radius:12px;border:1px solid var(--line);z-index:1}
+.mapside{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+ overflow:hidden;max-height:480px;display:flex;flex-direction:column}
+.mapside h4{margin:0;padding:11px 14px;font-family:ui-sans-serif,-apple-system,sans-serif;
+ font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+ border-bottom:1px solid var(--line);background:var(--chip)}
+.mapside-scroll{overflow-y:auto}
+.mi{display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+ align-items:center}
+.mi:hover{background:var(--chip)}
+.mi img{width:52px;height:44px;object-fit:cover;border-radius:6px;flex:0 0 auto;background:var(--chip)}
+.mi-b{flex:1;min-width:0;font-family:ui-sans-serif,-apple-system,sans-serif}
+.mi-n{font-size:12.5px;font-weight:600;line-height:1.3}
+.mi-m{font-size:11px;color:var(--ink-3);margin-top:1px}
+.mi-p{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;font-weight:700;
+ text-align:right;flex:0 0 auto}
+.mi-p small{display:block;font-size:9.5px;font-weight:400;color:var(--ink-3)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;
+ font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;color:var(--ink-3)}
+.legend span{display:flex;align-items:center;gap:6px}
+.lg{width:9px;height:9px;border-radius:50%}
+.leaflet-popup-content{margin:0;font-family:ui-sans-serif,-apple-system,sans-serif}
+.pop{width:212px}
+.pop img{width:100%;height:112px;object-fit:cover;display:block}
+.pop-b{padding:9px 11px 11px}
+.pop-n{font-size:13px;font-weight:700;line-height:1.3}
+.pop-m{font-size:11px;color:#777;margin:2px 0 6px}
+.pop a{display:block;text-align:center;padding:6px;border-radius:6px;color:#fff!important;
+ font-size:11.5px;font-weight:700;text-decoration:none}
+
+/* stays */
+.stay{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden;
+ margin-bottom:24px;box-shadow:var(--shadow)}
+.stay-gal{display:grid;grid-template-columns:2.1fr 1fr 1fr;grid-template-rows:132px 132px;gap:4px}
+.stay-gal img{width:100%;height:100%;object-fit:cover;display:block;background:var(--chip)}
+.stay-gal img:first-child{grid-row:1/3}
+.stay-body{padding:20px 24px 22px}
+.rank{display:flex;align-items:center;gap:9px;font-family:ui-sans-serif,-apple-system,sans-serif;
+ font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+.badge{color:#fff;padding:3px 9px;border-radius:5px;font-weight:700;letter-spacing:.06em}
+.coast-bg{background:var(--coast)}
+.inland-bg{background:var(--inland)}
+.cmeta{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;color:var(--ink-2);
+ margin-top:4px}
+.star{color:var(--amber)}
+.price-row{display:flex;align-items:baseline;gap:9px;margin-top:11px}
+.price-big{font-size:27px;font-weight:600;letter-spacing:-.02em}
+.price-sm{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12.5px;color:var(--ink-3)}
+.drive{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;color:var(--ink-3);
+ margin-top:3px}
+.stay-cols{display:grid;grid-template-columns:1.35fr .9fr;gap:28px;margin-top:16px;
+ align-items:start}
+.pros{list-style:none;margin:0;padding:0;font-family:ui-sans-serif,-apple-system,sans-serif;
+ font-size:13.5px;columns:2;column-gap:22px}
+.pros li{padding-left:16px;position:relative;margin-bottom:5px;break-inside:avoid}
+.pros li:before{position:absolute;left:0;font-weight:700}
+.pros li.y:before{content:"+";color:var(--ok)}
+.pros li.n:before{content:"\2013";color:var(--bad)}
+.cats{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:11.5px;color:var(--ink-3);
+ padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.cta{display:inline-block;color:#fff!important;text-decoration:none;padding:9px 20px;
+ border-radius:8px;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;font-weight:700}
+footer{padding:28px 0 46px;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;
+ color:var(--ink-3)}
+footer p{margin:0 0 6px}
+
+@media(max-width:860px){
+  .dg-wrap{grid-template-columns:1fr;gap:24px}
+  .maprow{grid-template-columns:1fr}
+  .mapside{max-height:300px}
+  .pgal{grid-template-columns:repeat(2,1fr)}
+  .pgal figure.wide{grid-column:span 2}
+  .stay-gal{grid-template-columns:1fr 1fr;grid-template-rows:120px 120px}
+  .stay-gal img:first-child{grid-column:1/3;grid-row:auto;height:190px}
+  .stay-gal img:nth-child(n+4){display:none}
+  .stay-cols{grid-template-columns:1fr;gap:16px}
+  .pros{columns:1}
+}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="kicker">28 August &ndash; 2 September 2026</div>
+  <h1>Coast or lakes?</h1>
+  <p class="lede">Three nights somewhere rural, then two in Gothenburg. These are the two
+  areas we shortlisted and the places we actually saved on Airbnb.</p>
+  <div class="facts">
+    <span class="fact">3 rural nights &middot; 28&ndash;31 Aug</span>
+    <span class="fact">2 city nights &middot; Gothenburg</span>
+    <span class="fact">Car for 4 days</span>
+    <span class="fact">Prices are live totals for 2</span>
+  </div>
+</div></header>
+
+<nav class="nav"><div class="nav-inner">
+  <a href="#glance">At a glance</a>
+  <a href="#coast-section" class="coast">The Coast</a>
+  <a href="#inland-section" class="inland">The Lakes</a>
+</div></nav>
+
+<section id="glance"><div class="wrap">
+  <h2>At a glance</h2>
+  <p class="sub">Where each option sits, and what it looks like.</p>
+  <div class="dg-wrap">
+    
+<svg class="diagram" viewBox="0 0 580 480" role="img"
+     aria-label="Simplified map of west Sweden showing the coastal area and the three inland areas">
+  <rect class="dg-sea" x="0" y="0" width="580" height="480"/>
+  <path class="dg-land" d="M 20,40 L 38,95 L 28,132 L 52,175 L 40,214 L 46,250 L 72,264
+    L 80,280 L 64,300 L 88,318 L 76,342 L 122,347 L 152,334 L 160,376 L 178,430 L 168,480
+    L 580,480 L 580,0 L 20,0 Z"/>
+  <path class="dg-lake" d="M 280,155 C 268,115 286,74 330,48 C 380,22 450,12 515,20
+    C 560,26 580,45 580,74 L 580,150 C 550,176 500,192 440,200 C 390,206 330,190 280,155 Z"/>
+  <text class="dg-water" x="430" y="112">Vänern</text>
+  
+  <!-- zones -->
+  <g class="dg-zone dg-zone-coast">
+    <ellipse cx="76" cy="256" rx="58" ry="98" transform="rotate(-8 76 256)"/>
+  </g>
+  <g class="dg-zone dg-zone-inland">
+    <ellipse cx="236" cy="132" rx="48" ry="66"/>
+    <ellipse cx="406" cy="188" rx="46" ry="42"/>
+    <ellipse cx="462" cy="284" rx="40" ry="36"/>
+  </g>
+
+  <!-- pins -->
+  <circle class="dg-pin" cx="85" cy="283" r="3.6"/><text class="dg-lbl" x="92" y="287">Fiskebäckskil</text>
+  <circle class="dg-pin" cx="97" cy="302" r="3.6"/><text class="dg-lbl" x="104" y="305">Stocken</text>
+  <circle class="dg-pin" cx="54" cy="184" r="3.6"/><text class="dg-lbl" x="61" y="187">Fjällbacka</text>
+  <circle class="dg-pin" cx="61" cy="329" r="3.6"/><text class="dg-lbl" x="68" y="332">Käringön</text>
+  <circle class="dg-pin" cx="242" cy="91" r="3.6"/><text class="dg-lbl" x="249" y="95">Dals Långed</text>
+  <circle class="dg-pin" cx="211" cy="170" r="3.6"/><text class="dg-lbl" text-anchor="end" x="204" y="173">Jolsäter</text>
+  <circle class="dg-pin" cx="402" cy="169" r="3.6"/><text class="dg-lbl" x="409" y="173">Kållandsö</text>
+  <circle class="dg-pin" cx="403" cy="211" r="3.6"/><text class="dg-lbl" x="410" y="214">Lidköping</text>
+  <circle class="dg-pin" cx="458" cy="291" r="3.6"/><text class="dg-lbl" x="465" y="295">Kleva</text>
+  <circle class="dg-hub" cx="182" cy="435" r="5"/>
+  <text class="dg-lbl dg-lbl-hub" x="191" y="439">Gothenburg</text>
+  <circle class="dg-hub" cx="242" cy="446" r="4"/>
+  <text class="dg-lbl dg-lbl-hub" x="250" y="450">Airport</text>
+
+  <text class="dg-zt dg-zt-coast" x="96" y="104">THE COAST</text>
+  <text class="dg-zt dg-zt-coast dg-zt-sm" x="96" y="120">one area</text>
+  <text class="dg-zt dg-zt-inland" x="304" y="256">THE LAKES</text>
+  <text class="dg-zt dg-zt-inland dg-zt-sm" x="304" y="272">three areas, far apart</text>
+</svg>
+    <div class="dg-side">
+      <div class="dg-block">
+        <div class="tag" style="color:var(--coast)">Option A &middot; The Coast</div>
+        <h3>Bohusl&auml;n</h3>
+        <p>Bare granite, white wooden villages, islands you reach on foot ferries.
+        All three saved places are within 20 minutes of each other on Skaft&ouml; and Orust,
+        so the choice of area is already made &mdash; only the house changes.</p>
+        <div class="dg-strip"><figure><img src="images/places/fiskeb-ckskil-0.jpg" alt="Fiskebäckskil" loading="lazy"><figcaption>Fiskebäckskil</figcaption></figure><figure><img src="images/places/grundsund-0.jpg" alt="Grundsund" loading="lazy"><figcaption>Grundsund</figcaption></figure><figure><img src="images/places/k-ring-n-0.jpg" alt="Käringön" loading="lazy"><figcaption>Käringön</figcaption></figure><figure><img src="images/places/st-ngehuvud-0.jpg" alt="Stångehuvud" loading="lazy"><figcaption>Stångehuvud</figcaption></figure></div>
+      </div>
+      <div class="dg-block">
+        <div class="tag" style="color:var(--inland)">Option B &middot; The Lakes</div>
+        <h3>Dalsland, V&auml;nern and Falk&ouml;ping</h3>
+        <p>Lakes, canals, forest and red wooden farms. The seven saved places fall into
+        three separate areas up to two hours apart, so here the area is part of the decision.</p>
+        <div class="dg-strip"><figure><img src="images/places/l-ck-castle-0.jpg" alt="Läckö Castle" loading="lazy"><figcaption>Läckö Castle</figcaption></figure><figure><img src="images/places/h-verud-0.jpg" alt="Håverud" loading="lazy"><figcaption>Håverud</figcaption></figure><figure><img src="images/places/kinnekulle-0.jpg" alt="Kinnekulle" loading="lazy"><figcaption>Kinnekulle</figcaption></figure><figure><img src="images/places/v-nern-0.jpg" alt="Lake Vänern" loading="lazy"><figcaption>Lake Vänern</figcaption></figure></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═══════════ THE COAST ═══════════ -->
+<div class="divider" id="coast-section">
+  <h2 style="color:var(--coast)">Option A &mdash; The Coast</h2>
+  <p>Granite, open sea, and white wooden villages</p>
+</div>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--coast)"></span>
+    <h2>What you would see</h2></div>
+  <p class="sub">Everything here is within about an hour of the base on Skaft&ouml;.</p>
+  <div class="pgal"><figure class="wide"><img src="images/places/fiskeb-ckskil-0.jpg" alt="Fiskebäckskil" loading="lazy"><figcaption>Fiskebäckskil<span>The base · sea captains&#x27; houses</span></figcaption></figure><figure class=""><img src="images/places/grundsund-0.jpg" alt="Grundsund" loading="lazy"><figcaption>Grundsund<span>10 min · working fishing village</span></figcaption></figure><figure class=""><img src="images/places/k-ring-n-0.jpg" alt="Käringön" loading="lazy"><figcaption>Käringön<span>Ferry · no cars on the island</span></figcaption></figure><figure class=""><img src="images/places/st-ngehuvud-0.jpg" alt="Stångehuvud" loading="lazy"><figcaption>Stångehuvud<span>25 min · pink granite by the sea</span></figcaption></figure><figure class="wide"><img src="images/places/fj-llbacka-1.jpg" alt="Fjällbacka" loading="lazy"><figcaption>Fjällbacka<span>1 h · village under the cliff</span></figcaption></figure><figure class=""><img src="images/places/sm-gen-0.jpg" alt="Smögen" loading="lazy"><figcaption>Smögen<span>1 h 15 · the famous boardwalk</span></figcaption></figure><figure class=""><img src="images/places/gullholmen-2.jpg" alt="Gullholmen" loading="lazy"><figcaption>Gullholmen<span>Ferry · lanes too narrow for cars</span></figcaption></figure><figure class=""><img src="images/places/moll-sund-0.jpg" alt="Mollösund" loading="lazy"><figcaption>Mollösund<span>20 min · cottages on the rocks</span></figcaption></figure><figure class="wide"><img src="images/places/fiskeb-ckskil-2.jpg" alt="Fiskebäckskil" loading="lazy"><figcaption>Fiskebäckskil<span>Evening walk along the water</span></figcaption></figure><figure class="wide"><img src="images/places/k-ring-n-2.jpg" alt="Käringön" loading="lazy"><figcaption>Käringön<span>Swimming off the rocks</span></figcaption></figure><figure class=""><img src="images/places/grundsund-1.jpg" alt="Grundsund" loading="lazy"><figcaption>Grundsund<span>Boathouses along the channel</span></figcaption></figure><figure class=""><img src="images/places/bohusl-n-0.jpg" alt="The archipelago" loading="lazy"><figcaption>The archipelago<span>Islands and open water</span></figcaption></figure></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--coast)"></span>
+    <h2>The map</h2></div>
+  <p class="sub">Three saved places and the day trips around them. Click a pin for prices and a link.</p>
+  <div class="maprow">
+    <div id="map-coast" class="map"></div>
+    <div class="mapside"><h4>Saved on Airbnb</h4><div class="mapside-scroll" id="side-coast"></div></div>
+  </div>
+  <div class="legend">
+    <span><i class="lg" style="background:var(--coast)"></i>Where we would stay</span>
+    <span><i class="lg" style="background:#7a8168"></i>Day trip</span>
+    <span><i class="lg" style="background:#9c5330"></i>Airport / city</span>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--coast)"></span>
+    <h2>The three places we saved</h2></div>
+  <p class="sub">Live Airbnb totals for 28&ndash;31 August, two guests, all fees included.</p>
+  
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/df32a69b-723a-419e-bc83-155e80a168bc.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/4e403081-0b67-487c-a605-cd3fc3b82a5d.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/2e1e71f3-a2f1-48a2-8509-9e4f646bf860.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/545571d5-3aa8-47bc-8847-2ab648bc8852.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/d2132bcf-a4f4-4758-ac1b-bc9ca586fc40.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge coast-bg">Best value</span><span>Fiskebäckskil, Skaftö</span></div>
+        <h3>Stay in the middle of Skaftö</h3>
+        <div class="cmeta">1 bedroom · 3 single beds · 1 bathroom &middot; <span class="star">&#9733;</span> 4.9 (31 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;255</span>
+          <span class="price-sm">for 3 nights &middot; &pound;85 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 55</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Location scored 5.0</li><li class="y">Outdoor shower</li><li class="y">BBQ</li><li class="y">Self check-in</li><li class="y">Walk into Fiskebäckskil</li><li class="n">Patio is shared, not private</li><li class="n">Three single beds</li></ul>
+          <div>
+            <div class="cats">Clean 4.8 · Accuracy 4.9 · Check-in 4.9 · Comms 5.0 · Location 5.0 · Value 4.9</div>
+            <a class="cta coast-bg" href="https://www.airbnb.co.uk/rooms/1376573309446590025?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/3adaa733-895f-4d64-8c45-6486c1759bdb.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/3cfd4138-cb92-4df2-a107-fef53ce18c26.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/80044df9-23bb-44fd-bd6e-f79afdcb71f4.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/ff5667d9-6cbe-4546-9248-a3f13cf4acb4.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/097b584b-0849-486d-b8bf-8e97111c62a3.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge coast-bg">Best view</span><span>Stocken, Orust</span></div>
+        <h3>Cosy cabin with sea view</h3>
+        <div class="cmeta">2 bedrooms · 4 beds · 1 bathroom &middot; <span class="star">&#9733;</span> 5.0 (5 reviews) &middot; Guest favourite</div>
+        <div class="price-row"><span class="price-big">&pound;453</span>
+          <span class="price-sm">for 3 nights &middot; &pound;151 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 50</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Sea view and sunset over the water</li><li class="y">15 m² glass veranda</li><li class="y">Kayak rental 5 min walk</li><li class="y">Ferry to Gullholmen and Käringön nearby</li><li class="y">Every category rated 5.0</li><li class="n">Only 5 reviews so far</li><li class="n">The most expensive of the three</li></ul>
+          <div>
+            <div class="cats">Clean 5.0 · Accuracy 5.0 · Check-in 5.0 · Comms 5.0 · Location 5.0 · Value 5.0</div>
+            <a class="cta coast-bg" href="https://www.airbnb.co.uk/rooms/1396426129335307050?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-957027808842293561/original/06eec963-2700-4274-9a83-1647581c325f.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-957027808842293561/original/f00ec7e7-5092-4931-8db8-c1b08e97deca.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/hosting/Hosting-957027808842293561/original/f7534ca8-c482-4718-953b-043a6c69f216.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-957027808842293561/original/57c4cc12-e95e-450b-b761-0ab93ea738db.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-957027808842293561/original/18c0bd09-b12e-4d8a-a233-c8dc04d1b74c.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge coast-bg">Most space</span><span>Fiskebäckskil</span></div>
+        <h3>Peaceful house with an amazing sea view</h3>
+        <div class="cmeta">3 bedrooms · 2 bathrooms &middot; <span class="star">&#9733;</span> 4.92 (13 reviews)</div>
+        <div class="price-row"><span class="price-big">&pound;550</span>
+          <span class="price-sm">for 3 nights &middot; &pound;183 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 55</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Ocean view from the top of the hill</li><li class="y">Private terrace</li><li class="y">Location scored 5.0</li><li class="n">Cleanliness rated 4.3</li><li class="n">No wifi</li><li class="n">£183 a night is over budget</li><li class="n">Only 13 reviews</li></ul>
+          <div>
+            <div class="cats">Clean 4.3 · Accuracy 4.8 · Check-in 4.8 · Comms 4.9 · Location 5.0 · Value 4.8</div>
+            <a class="cta coast-bg" href="https://www.airbnb.co.uk/rooms/957027808842293561?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+</div></section>
+
+<!-- ═══════════ THE LAKES ═══════════ -->
+<div class="divider" id="inland-section">
+  <h2 style="color:var(--inland)">Option B &mdash; The Lakes</h2>
+  <p>Canals, forest, and Sweden's largest lake</p>
+</div>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--inland)"></span>
+    <h2>What you would see</h2></div>
+  <p class="sub">Spread across three areas &mdash; Dalsland in the north, V&auml;nern in the middle,
+  Falk&ouml;ping in the south.</p>
+  <div class="pgal"><figure class="wide"><img src="images/places/l-ck-castle-0.jpg" alt="Läckö Castle" loading="lazy"><figcaption>Läckö Castle<span>White baroque castle on the lake</span></figcaption></figure><figure class=""><img src="images/places/h-verud-0.jpg" alt="Håverud" loading="lazy"><figcaption>Håverud<span>Where the canal runs through the village</span></figcaption></figure><figure class=""><img src="images/places/kinnekulle-0.jpg" alt="Kinnekulle" loading="lazy"><figcaption>Kinnekulle<span>Old woods on the table mountain</span></figcaption></figure><figure class=""><img src="images/places/v-nern-0.jpg" alt="Lake Vänern" loading="lazy"><figcaption>Lake Vänern<span>Sweden&#x27;s largest lake</span></figcaption></figure><figure class="wide"><img src="images/places/dalsland-0.jpg" alt="Dalsland Canal" loading="lazy"><figcaption>Dalsland Canal<span>Locks and still water</span></figcaption></figure><figure class=""><img src="images/places/hornborgasj-n-1.jpg" alt="Hornborgasjön" loading="lazy"><figcaption>Hornborgasjön<span>Cranes on the bird lake</span></figcaption></figure><figure class=""><img src="images/places/lidk-ping-0.jpg" alt="Lidköping" loading="lazy"><figcaption>Lidköping<span>The old square in town</span></figcaption></figure><figure class=""><img src="images/places/kinnekulle-1.jpg" alt="Kinnekulle" loading="lazy"><figcaption>Kinnekulle<span>Forest paths and old trees</span></figcaption></figure><figure class="wide"><img src="images/places/l-ck-castle-1.jpg" alt="Läckö Castle" loading="lazy"><figcaption>Läckö Castle<span>White walls above the shore</span></figcaption></figure><figure class="wide"><img src="images/places/v-nern-1.jpg" alt="Vänern" loading="lazy"><figcaption>Vänern<span>An island on open water</span></figcaption></figure><figure class=""><img src="images/places/h-verud-1.jpg" alt="Håverud" loading="lazy"><figcaption>Håverud<span>The canal village from above</span></figcaption></figure><figure class=""><img src="images/places/hornborgasj-n-0.jpg" alt="Hornborgasjön" loading="lazy"><figcaption>Hornborgasjön<span>Wide views over the reeds</span></figcaption></figure></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--inland)"></span>
+    <h2>The map</h2></div>
+  <p class="sub">Seven saved places in three clusters. Click a pin for prices and a link.</p>
+  <div class="maprow">
+    <div id="map-inland" class="map"></div>
+    <div class="mapside"><h4>Saved on Airbnb</h4><div class="mapside-scroll" id="side-inland"></div></div>
+  </div>
+  <div class="legend">
+    <span><i class="lg" style="background:var(--inland)"></i>Where we would stay</span>
+    <span><i class="lg" style="background:#7a8168"></i>Day trip</span>
+    <span><i class="lg" style="background:#9c5330"></i>Airport / city</span>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-dot" style="background:var(--inland)"></span>
+    <h2>The seven places we saved</h2></div>
+  <p class="sub">Live Airbnb totals for 28&ndash;31 August, two guests, all fees included.</p>
+  
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/3e51543b-7ebd-45e0-b480-c4c463563f0f.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/b3a51a4f-9630-4d75-bb55-8fb55e6f8d24.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/a3fd1303-f8aa-4b87-881a-22cd2713e484.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/8643a4ac-c83b-46a9-b39a-df4409a99b4e.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/4bb20aae-7d06-4179-97d3-ef7deaec0e0c.jpg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">Cheapest</span><span>Kållandsö, 4 km from Läckö</span></div>
+        <h3>Nice cottage on beautiful Kållandsö</h3>
+        <div class="cmeta">2 bedrooms · 4 beds · 1 bathroom &middot; <span class="star">&#9733;</span> 4.94 (85 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;185</span>
+          <span class="price-sm">for 3 nights &middot; &pound;62 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 50</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Waterfront with its own boat berth</li><li class="y">Private garden and balcony</li><li class="y">4 km from Läckö Castle</li><li class="y">£62 a night</li><li class="n">No washing machine</li><li class="n">Two bedrooms, more than you need</li></ul>
+          <div>
+            <div class="cats">Clean 5.0 · Accuracy 4.9 · Check-in 5.0 · Comms 5.0 · Location 4.8 · Value 4.8</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/25883472?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/580f8e10-fee6-4a00-a914-1ec4f319ace8.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-39141495/original/16c9be4f-00a4-4bd2-9132-cb15611ec0cf.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-39141495/original/ff0b8c44-406c-41e3-a9b3-f39e06098b2a.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-39141495/original/9906bf3b-2d99-4134-8eb1-7470908a3079.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-39141495/original/7345d36b-05d8-4d05-a156-bdd4d236ea3c.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">Good value</span><span>between Lidköping and Läckö</span></div>
+        <h3>Guest house between Lidköping and Läckö</h3>
+        <div class="cmeta">2 bedrooms · 3 beds · 1 bathroom &middot; <span class="star">&#9733;</span> 4.93 (100 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;202</span>
+          <span class="price-sm">for 3 nights &middot; &pound;67 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 45</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Waterfront with lake access</li><li class="y">Private patio</li><li class="y">37 m² with a sleeping loft</li><li class="y">100 reviews at 4.93</li><li class="n">No washing machine</li><li class="n">Cameras on the property</li></ul>
+          <div>
+            <div class="cats">Clean 4.9 · Accuracy 4.9 · Check-in 5.0 · Comms 5.0 · Location 4.8 · Value 4.9</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/39141495?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/3d05029f-67bb-4d1d-837e-f23c3080e124.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/ae26d539-8016-41d9-8b33-0b3e2b27ed38.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/756502f2-e45d-45b2-b8dc-a28f7a8442e8.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/6acd18b7-2444-446b-ab42-ab232b5b852a.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/f18453e8-77d5-471a-830c-88ff03da59a3.jpg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">Most reviewed</span><span>Lidköping, near Läckö</span></div>
+        <h3>Modern guest house with lake view</h3>
+        <div class="cmeta">1 bedroom · 2 single beds · 1 bathroom &middot; <span class="star">&#9733;</span> 4.95 (143 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;291</span>
+          <span class="price-sm">for 3 nights &middot; &pound;97 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 40</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Waterfront on Vänern with lake access</li><li class="y">Private patio</li><li class="y">143 reviews and still rated 4.95</li><li class="y">Shortest airport drive of the inland picks</li><li class="n">Sits on the owners&#x27; property</li><li class="n">Two single beds, not a double</li></ul>
+          <div>
+            <div class="cats">Clean 5.0 · Accuracy 4.9 · Check-in 5.0 · Comms 5.0 · Location 4.9 · Value 4.9</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/41304683?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/0f5a66a2-58ec-4dae-b4a4-8d357aae3d54.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/dc2bd94e-a400-4f3f-9745-f16fde1aa10c.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/ceb68824-76a7-4fde-8b89-888a7d5107a0.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/d8155591-87cd-4f88-8636-7bf6ee5be193.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/d8155591-87cd-4f88-8636-7bf6ee5be193.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">On the canal</span><span>Dals Långed, on the Dalsland Canal</span></div>
+        <h3>Flottarstugan, waterfront cottage</h3>
+        <div class="cmeta">1 bedroom · 1 bathroom &middot; <span class="star">&#9733;</span> 4.97 (36 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;289</span>
+          <span class="price-sm">for 3 nights &middot; &pound;96 a night</span></div>
+        <div class="drive">Airport drive: 2 h 17</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Sits at the seventeenth lock of the Dalsland Canal</li><li class="y">Lake access</li><li class="y">Value rated 5.0</li><li class="y">Superhost</li><li class="n">No wifi</li><li class="n">The longest drive from the airport</li></ul>
+          <div>
+            <div class="cats">Clean 4.8 · Accuracy 5.0 · Check-in 4.9 · Comms 5.0 · Location 4.9 · Value 5.0</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/1157128423839202089?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/6f009e07-5613-4016-a364-ecc7ddef2be9.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/394e7481-7a0b-470f-8593-a76f0336ed44.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/cc8a1ddf-4fea-441e-83a9-2684b185354b.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/99479465-c323-4539-b5c9-e19d5c30dbff.jpeg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/99479465-c323-4539-b5c9-e19d5c30dbff.jpeg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">On the canal</span><span>Dals Långed, on the Dalsland Canal</span></div>
+        <h3>Ladan, canal cottage</h3>
+        <div class="cmeta">1 bedroom · 3 beds · 1 bathroom &middot; <span class="star">&#9733;</span> 4.96 (25 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;358</span>
+          <span class="price-sm">for 3 nights &middot; &pound;119 a night</span></div>
+        <div class="drive">Airport drive: 2 h 17</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">A few metres from the canal</li><li class="y">Lake access and beach access</li><li class="y">Indoor fireplace</li><li class="y">Canal and harbour views</li><li class="n">Cleanliness rated 4.6</li><li class="n">No washing machine</li><li class="n">£119 a night</li></ul>
+          <div>
+            <div class="cats">Clean 4.6 · Accuracy 4.9 · Check-in 4.9 · Comms 4.9 · Location 4.9 · Value 4.9</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/1200628596659895709?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/46eb2e4c-cee9-4255-990d-319fd068e483.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/cc5d794e-1a79-4793-b47c-ede95241ad92.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/2a23d1a2-f0b3-45ce-84b7-7c3fcbb9a676.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/6bdbe4cb-7c55-427c-bd3c-642bc997382f.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/ae722273-8925-4bba-b0ca-ca901f388e90.jpg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">Own jetty</span><span>Jolsäter, below Kroppefjäll</span></div>
+        <h3>Cozy cottage with own jetty</h3>
+        <div class="cmeta">1 bedroom · 3 beds · No bathroom &middot; <span class="star">&#9733;</span> 4.91 (45 reviews)</div>
+        <div class="price-row"><span class="price-big">&pound;303</span>
+          <span class="price-sm">for 3 nights &middot; &pound;101 a night</span></div>
+        <div class="drive">Airport drive: about 2 h 00</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">Its own shoreline and jetty</li><li class="y">A rowing boat is included</li><li class="y">Wood fireplace</li><li class="y">Walking trails on Kroppefjäll next door</li><li class="y">Location rated 5.0</li><li class="n">No bathroom listed</li><li class="n">No wifi, no washing machine</li></ul>
+          <div>
+            <div class="cats">Clean 4.9 · Accuracy 4.9 · Check-in 5.0 · Comms 5.0 · Location 5.0 · Value 4.9</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/44635834?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <article class="stay">
+      <div class="stay-gal"><img src="https://a0.muscache.com/im/pictures/5d4165bb-f3bf-441a-b480-2b48df4713b2.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/3fdd4751-84c3-4f28-9e5a-d4a7646bf9fd.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/1bc32542-18b6-457f-b96a-942a82466555.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/4fde7e1f-9b5f-47bb-a2f0-507b11d8992f.jpg?im_w=960" alt="" loading="lazy"><img src="https://a0.muscache.com/im/pictures/61292700-add9-4b10-bfc2-a4315ece55db.jpg?im_w=960" alt="" loading="lazy"></div>
+      <div class="stay-body">
+        <div class="rank"><span class="badge inland-bg">Breakfast</span><span>Kleva, below Mösseberg</span></div>
+        <h3>Kleva Kvarn, with breakfast</h3>
+        <div class="cmeta">2 bedrooms · 4 beds · WC &middot; <span class="star">&#9733;</span> 4.99 (134 reviews) &middot; Superhost</div>
+        <div class="price-row"><span class="price-big">&pound;194</span>
+          <span class="price-sm">for 3 nights &middot; &pound;65 a night</span></div>
+        <div class="drive">Airport drive: about 1 h 45</div>
+        <div class="stay-cols">
+          <ul class="pros"><li class="y">A converted mill house, with the wheel and pond outside</li><li class="y">Breakfast included</li><li class="y">Location and value both rated 5.0</li><li class="y">134 reviews at 4.99</li><li class="n">No kitchen</li><li class="n">No washing machine</li></ul>
+          <div>
+            <div class="cats">Clean 4.9 · Accuracy 5.0 · Check-in 5.0 · Comms 5.0 · Location 5.0 · Value 5.0</div>
+            <a class="cta inland-bg" href="https://www.airbnb.co.uk/rooms/41122268?check_in=2026-08-28&check_out=2026-08-31&adults=2" target="_blank" rel="noopener">Open on Airbnb</a>
+          </div>
+        </div>
+      </div>
+    </article>
+</div></section>
+
+<footer><div class="wrap">
+  <p>Compiled 24 August 2026. Prices are live Airbnb totals for 28&ndash;31 August 2026,
+  two guests, service fees included. Drive times checked on Google Maps.</p>
+  <p>Photographs of villages and landscapes are from Wikimedia Commons, used under their
+  CC BY, CC BY-SA and public-domain licences. Property photographs belong to the hosts.</p>
+</div></footer>
+
+<script>
+const COAST_LISTINGS = [{"id": "1376573309446590025", "n": "Stay in the middle of Skaftö", "place": "Fiskebäckskil, Skaftö", "lat": 58.2238, "lng": 11.4573, "tot": 255, "pn": 85, "rate": 4.9, "rev": 31, "photo": "https://a0.muscache.com/im/pictures/miso/Hosting-1376573309446590025/original/df32a69b-723a-419e-bc83-155e80a168bc.jpeg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/1376573309446590025?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "1396426129335307050", "n": "Cosy cabin with sea view", "place": "Stocken, Orust", "lat": 58.1803, "lng": 11.5218, "tot": 453, "pn": 151, "rate": 5.0, "rev": 5, "photo": "https://a0.muscache.com/im/pictures/hosting/Hosting-1396426129335307050/original/3adaa733-895f-4d64-8c45-6486c1759bdb.jpeg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/1396426129335307050?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "957027808842293561", "n": "Peaceful house with an amazing sea view", "place": "Fiskebäckskil", "lat": 58.2463, "lng": 11.4571, "tot": 550, "pn": 183, "rate": 4.92, "rev": 13, "photo": "https://a0.muscache.com/im/pictures/hosting/Hosting-957027808842293561/original/06eec963-2700-4274-9a83-1647581c325f.jpeg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/957027808842293561?check_in=2026-08-28&check_out=2026-08-31&adults=2"}];
+const INLAND_LISTINGS = [{"id": "25883472", "n": "Nice cottage on beautiful Kållandsö", "place": "Kållandsö, 4 km from Läckö", "lat": 58.6499, "lng": 13.1542, "tot": 185, "pn": 62, "rate": 4.94, "rev": 85, "photo": "https://a0.muscache.com/im/pictures/3e51543b-7ebd-45e0-b480-c4c463563f0f.jpg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/25883472?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "39141495", "n": "Guest house between Lidköping and Läckö", "place": "between Lidköping and Läckö", "lat": 58.6143, "lng": 13.1713, "tot": 202, "pn": 67, "rate": 4.93, "rev": 100, "photo": "https://a0.muscache.com/im/pictures/580f8e10-fee6-4a00-a914-1ec4f319ace8.jpg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/39141495?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "41304683", "n": "Modern guest house with lake view", "place": "Lidköping, near Läckö", "lat": 58.6267, "lng": 13.1778, "tot": 291, "pn": 97, "rate": 4.95, "rev": 143, "photo": "https://a0.muscache.com/im/pictures/3d05029f-67bb-4d1d-837e-f23c3080e124.jpg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/41304683?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "1157128423839202089", "n": "Flottarstugan, waterfront cottage", "place": "Dals Långed, on the Dalsland Canal", "lat": 58.9256, "lng": 12.2945, "tot": 289, "pn": 96, "rate": 4.97, "rev": 36, "photo": "https://a0.muscache.com/im/pictures/miso/Hosting-1157128423839202089/original/0f5a66a2-58ec-4dae-b4a4-8d357aae3d54.jpeg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/1157128423839202089?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "1200628596659895709", "n": "Ladan, canal cottage", "place": "Dals Långed, on the Dalsland Canal", "lat": 58.926, "lng": 12.2936, "tot": 358, "pn": 119, "rate": 4.96, "rev": 25, "photo": "https://a0.muscache.com/im/pictures/miso/Hosting-1200628596659895709/original/6f009e07-5613-4016-a364-ecc7ddef2be9.jpeg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/1200628596659895709?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "44635834", "n": "Cozy cottage with own jetty", "place": "Jolsäter, below Kroppefjäll", "lat": 58.6475, "lng": 12.1294, "tot": 303, "pn": 101, "rate": 4.91, "rev": 45, "photo": "https://a0.muscache.com/im/pictures/46eb2e4c-cee9-4255-990d-319fd068e483.jpg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/44635834?check_in=2026-08-28&check_out=2026-08-31&adults=2"}, {"id": "41122268", "n": "Kleva Kvarn, with breakfast", "place": "Kleva, below Mösseberg", "lat": 58.2166, "lng": 13.4508, "tot": 194, "pn": 65, "rate": 4.99, "rev": 134, "photo": "https://a0.muscache.com/im/pictures/5d4165bb-f3bf-441a-b480-2b48df4713b2.jpg?im_w=320", "url": "https://www.airbnb.co.uk/rooms/41122268?check_in=2026-08-28&check_out=2026-08-31&adults=2"}];
+const COAST_PLACES = [{"n": "Landvetter airport", "lat": 57.6685, "lng": 12.296, "k": "hub"}, {"n": "Gothenburg", "lat": 57.7089, "lng": 11.9746, "k": "hub"}, {"n": "Fjällbacka", "lat": 58.5983, "lng": 11.2867, "k": "trip", "d": "Village under the granite cliff · 1 h"}, {"n": "Smögen", "lat": 58.3547, "lng": 11.2261, "k": "trip", "d": "The boardwalk · 1 h 15"}, {"n": "Lysekil & Stångehuvud", "lat": 58.2742, "lng": 11.4356, "k": "trip", "d": "Pink granite reserve · 25 min"}, {"n": "Grundsund", "lat": 58.2127, "lng": 11.4327, "k": "trip", "d": "Fishing village · 10 min"}, {"n": "Tuvesvik ferry", "lat": 58.1789, "lng": 11.4172, "k": "trip", "d": "Walk-on ferries to the islands"}, {"n": "Käringön", "lat": 58.0836, "lng": 11.3283, "k": "trip", "d": "Car-free island · by ferry"}, {"n": "Gullholmen", "lat": 58.1897, "lng": 11.3925, "k": "trip", "d": "Island village · by ferry"}, {"n": "Mollösund", "lat": 58.0716, "lng": 11.4703, "k": "trip", "d": "Fishing village on Orust · 20 min"}];
+const INLAND_PLACES = [{"n": "Landvetter airport", "lat": 57.6685, "lng": 12.296, "k": "hub"}, {"n": "Gothenburg", "lat": 57.7089, "lng": 11.9746, "k": "hub"}, {"n": "Läckö Castle", "lat": 58.6817, "lng": 13.2247, "k": "trip", "d": "Baroque castle on the lake"}, {"n": "Kinnekulle", "lat": 58.5892, "lng": 13.3833, "k": "trip", "d": "Table mountain and old woods"}, {"n": "Lidköping", "lat": 58.5033, "lng": 13.1575, "k": "trip", "d": "Town on Vänern"}, {"n": "Håverud aqueduct", "lat": 58.8261, "lng": 12.4219, "k": "trip", "d": "Canal in a steel trough over a gorge"}, {"n": "Kroppefjäll", "lat": 58.6764, "lng": 12.2069, "k": "trip", "d": "Forested plateau, walking trails"}, {"n": "Hornborgasjön", "lat": 58.3167, "lng": 13.55, "k": "trip", "d": "Bird lake"}, {"n": "Mösseberg", "lat": 58.2181, "lng": 13.5147, "k": "trip", "d": "Hill and park above Falköping"}, {"n": "Dalsland Canal", "lat": 58.9256, "lng": 12.2945, "k": "trip", "d": "Locks, lakes and forest"}];
+
+function build(mapId, sideId, listings, places, accent) {
+  const map = L.map(mapId, {scrollWheelZoom:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; OSM &amp; CARTO', maxZoom:18
+  }).addTo(map);
+
+  const bounds = [];
+  const markers = {};
+
+  function pin(color, r) {
+    return L.divIcon({
+      className:'', iconSize:[r*2,r*2], iconAnchor:[r,r],
+      html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${color};
+             border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`
+    });
+  }
+
+  places.forEach(p => {
+    const c = p.k === 'hub' ? '#9c5330' : '#7a8168';
+    const m = L.marker([p.lat, p.lng], {icon: pin(c, p.k==='hub'?7:6)}).addTo(map);
+    m.bindPopup(`<div class="pop"><div class="pop-b"><div class="pop-n">${p.n}</div>` +
+      (p.d ? `<div class="pop-m">${p.d}</div>` : '') + `</div></div>`);
+    bounds.push([p.lat, p.lng]);
+  });
+
+  const side = document.getElementById(sideId);
+  listings.forEach(d => {
+    const m = L.marker([d.lat, d.lng], {icon: pin(accent, 9)}).addTo(map);
+    m.bindPopup(`<div class="pop"><img src="${d.photo}" alt="">
+      <div class="pop-b"><div class="pop-n">${d.n}</div>
+      <div class="pop-m">${d.place} &middot; &#9733;${d.rate} (${d.rev}) &middot;
+      &pound;${d.tot} for 3 nights</div>
+      <a href="${d.url}" target="_blank" rel="noopener"
+         style="background:${accent}">Open on Airbnb</a></div></div>`, {maxWidth:230});
+    markers[d.id] = m;
+    bounds.push([d.lat, d.lng]);
+
+    const row = document.createElement('div');
+    row.className = 'mi';
+    row.innerHTML = `<img src="${d.photo}" alt="">
+      <div class="mi-b"><div class="mi-n">${d.n}</div>
+      <div class="mi-m">${d.place} &middot; &#9733;${d.rate}</div></div>
+      <div class="mi-p">&pound;${d.pn}<small>/night</small></div>`;
+    row.onclick = () => { map.flyTo([d.lat, d.lng], 11, {duration:.6}); m.openPopup(); };
+    side.appendChild(row);
+  });
+
+  map.fitBounds(bounds, {padding:[38,38]});
+}
+
+build('map-coast', 'side-coast', COAST_LISTINGS, COAST_PLACES,
+      getComputedStyle(document.documentElement).getPropertyValue('--coast').trim());
+build('map-inland', 'side-inland', INLAND_LISTINGS, INLAND_PLACES,
+      getComputedStyle(document.documentElement).getPropertyValue('--inland').trim());
+</script>
+</body>
+</html>
