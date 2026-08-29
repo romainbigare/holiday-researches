@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gothenburg on £100 a Night</title>
+<style>
+:root{
+  --bg:#faf7f2; --panel:#ffffff; --ink:#23201c; --ink-2:#5d564d; --ink-3:#8c8377;
+  --line:#e6ded2; --line-2:#d5c9b8;
+  --sea:#1f5f74; --sea-2:#2e7f96; --sand:#c9a227; --rose:#a8503f; --moss:#4a6b48;
+  --ok:#2f6b4f; --warn:#9a6b1e; --bad:#9c4436;
+  --chip:#f2ece3; --shadow:0 1px 2px rgba(35,32,28,.06),0 8px 24px rgba(35,32,28,.06);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#16130f; --panel:#1e1a15; --ink:#f0e9df; --ink-2:#b7ada0; --ink-3:#8a8175;
+  --line:#2e2820; --line-2:#3d352b; --chip:#262019;
+  --sea:#6fc0d6; --sea-2:#8fd4e6; --sand:#e0bd4a; --rose:#e08a76; --moss:#8fb98c;
+  --ok:#7fc49f; --warn:#e0b45f; --bad:#e08a76;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#16130f; --panel:#1e1a15; --ink:#f0e9df; --ink-2:#b7ada0; --ink-3:#8a8175;
+  --line:#2e2820; --line-2:#3d352b; --chip:#262019;
+  --sea:#6fc0d6; --sea-2:#8fd4e6; --sand:#e0bd4a; --rose:#e08a76; --moss:#8fb98c;
+  --ok:#7fc49f; --warn:#e0b45f; --bad:#e08a76;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font:16px/1.65 ui-serif,Georgia,"Iowan Old Style","Times New Roman",serif;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.25;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:600}
+h2{font-size:clamp(21px,2.6vw,28px);font-weight:600;margin:0 0 4px}
+h3{font-size:18px;font-weight:600}
+p{margin:0 0 14px}
+a{color:var(--sea);text-underline-offset:2px}
+.sans{font-family:ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,sans-serif}
+
+header{padding:56px 0 30px;border-bottom:1px solid var(--line)}
+.kicker{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12px;letter-spacing:.16em;
+ text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+.lede{font-size:19px;color:var(--ink-2);max-width:68ch;margin-top:16px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.fact{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;background:var(--chip);
+ border:1px solid var(--line);border-radius:999px;padding:5px 13px;color:var(--ink-2)}
+
+section{padding:44px 0;border-bottom:1px solid var(--line)}
+.sub{color:var(--ink-3);font-family:ui-sans-serif,-apple-system,sans-serif;font-size:14px;margin-bottom:22px}
+
+.answer{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--sea);
+ border-radius:4px;padding:26px 28px;box-shadow:var(--shadow);margin-top:8px}
+.answer h3{margin-bottom:10px}
+.answer p:last-child{margin-bottom:0}
+
+/* map */
+.mapbox{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+ box-shadow:var(--shadow);padding:14px;overflow-x:auto}
+.mapbox svg{width:100%;min-width:620px;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;
+ font-family:ui-sans-serif,-apple-system,sans-serif;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line-2)}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;
+ box-shadow:var(--shadow);display:flex;flex-direction:column}
+.card.hero{grid-column:1/-1;border-left:3px solid var(--sea)}
+.cb{padding:18px 20px 20px;display:flex;flex-direction:column;flex:1}
+.rank{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:11px;letter-spacing:.13em;
+ text-transform:uppercase;color:var(--ink-3);margin-bottom:7px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.badge{background:var(--rose);color:#fff;border-radius:3px;padding:2px 7px;letter-spacing:.06em}
+.badge.alt{background:var(--sea)}
+.badge.gold{background:var(--sand);color:#3a2f0c}
+.card h3{margin-bottom:5px;font-size:19px}
+.cmeta{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;color:var(--ink-3);margin-bottom:12px}
+.price-row{display:flex;align-items:baseline;gap:9px;margin-bottom:12px;
+ font-family:ui-sans-serif,-apple-system,sans-serif;flex-wrap:wrap}
+.price-big{font-size:25px;font-weight:600;color:var(--ink);font-family:ui-serif,Georgia,serif;
+ font-variant-numeric:tabular-nums}
+.price-sm{font-size:13px;color:var(--ink-3)}
+.card p{font-size:14.5px;color:var(--ink-2);margin-bottom:14px}
+.pros{list-style:none;padding:0;margin:0 0 14px;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px}
+.pros li{padding-left:20px;position:relative;margin-bottom:4px;color:var(--ink-2)}
+.pros li.y:before{content:"+";position:absolute;left:5px;color:var(--ok);font-weight:700}
+.pros li.n:before{content:"\2212";position:absolute;left:5px;color:var(--bad);font-weight:700}
+.cats{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:11.5px;color:var(--ink-3);
+ border-top:1px solid var(--line);padding-top:11px;margin-top:auto}
+.cta{display:inline-block;margin-top:12px;background:var(--sea);color:#fff;text-decoration:none;
+ font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;font-weight:600;
+ padding:9px 17px;border-radius:4px;align-self:flex-start}
+.cta:hover{background:var(--sea-2)}
+a:focus-visible,.cta:focus-visible{outline:2px solid var(--sea-2);outline-offset:2px}
+
+/* score bar */
+.bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;margin:2px 0 12px}
+.bar i{display:block;height:100%;background:var(--sea);border-radius:3px}
+.barlab{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:11px;color:var(--ink-3);
+ display:flex;justify-content:space-between;margin-bottom:3px}
+
+/* table */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13.5px}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;
+ background:var(--chip);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--chip)}
+tbody tr.pick{background:color-mix(in srgb,var(--sea) 9%,transparent)}
+td.wide{white-space:normal;min-width:200px}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+.tag.bad{color:var(--bad);border-color:var(--bad)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px 22px;box-shadow:var(--shadow)}
+.box h3{margin-bottom:9px}
+.box ul{margin:0;padding-left:19px;font-size:14.5px;color:var(--ink-2)}
+.box li{margin-bottom:7px}
+footer{padding:36px 0 60px;color:var(--ink-3);font-size:13.5px;
+ font-family:ui-sans-serif,-apple-system,sans-serif}
+.conf{font-family:ui-sans-serif,-apple-system,sans-serif;font-size:13px;color:var(--ink-2)}
+.conf b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="kicker">Sweden &middot; city leg &middot; Monday 31 August to Wednesday 2 September 2026</div>
+  <h1>Gothenburg on &pound;100 a night</h1>
+  <p class="lede">Two nights, two adults, breakfast included, and one goal: the most expensive-feeling
+  room the money will buy. I pulled live quotes for twenty-one Gothenburg hotels for your exact dates,
+  scored each one on how luxurious it actually feels, and divided by the price. One hotel wins by a
+  distance, and it is not the one the star ratings would pick.</p>
+  <div class="facts">
+    <span class="fact">2 adults &middot; 1 room</span>
+    <span class="fact">2 nights &middot; 31 Aug &ndash; 2 Sep 2026</span>
+    <span class="fact">21 hotels quoted live</span>
+    <span class="fact">All prices GBP, breakfast included</span>
+    <span class="fact">Checked 29 August 2026</span>
+  </div>
+</div></header>
+
+<section><div class="wrap">
+  <h2>The short answer</h2>
+  <p class="sub">What &ldquo;maximum luxury per pound&rdquo; actually points to.</p>
+  <div class="answer">
+    <h3>Elite Park Avenue Hotel &mdash; &pound;197.32 for the two nights, &pound;98.66 a night, breakfast in.</h3>
+    <p>It is the only hotel in Gothenburg that gives you a <b>heated indoor pool, two saunas, a steam
+    room, a plunge pool and a spa</b> for under a hundred pounds a night. Every other hotel in the city
+    with that wellness stack starts at &pound;156 and runs to &pound;273. You are buying a four-star grand
+    hotel on the Avenyn, with its own art gallery, at the price of a good three-star.</p>
+    <p>The wellness floor is what does the work here. A pool and a sauna are the two things that make a
+    room feel like a holiday rather than a bed, they are the first thing budget hotels cut, and on these
+    dates Elite are effectively giving them away. It lands at &pound;1.34 <i>under</i> your stated budget.</p>
+    <p>Two others earn a look. <b>Hotel Royal</b> at &pound;119.01 a night is the most charming building
+    on the list &mdash; the city&rsquo;s oldest hotel, 1852, with a hand-painted glass ceiling over the
+    stairwell &mdash; and carries a 9.1 guest score, the best of anything near the budget. And if you will
+    stretch, <b>Clarion Hotel Draken</b> at &pound;139.77 puts you literally on Järntorget, in the middle
+    of the best bar and restaurant district in the city, in a hotel that opened in 2024.</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Where the ten sit</h2>
+  <p class="sub">Pin colour is price against your &pound;100 budget. The cool districts &mdash; Haga,
+  J&auml;rntorget, Magasinsgatan &mdash; are marked, as are the two airport-coach stops that matter
+  for the Wednesday flight.</p>
+  <div class="mapbox">
+  <svg viewBox="0 0 1000 873" role="img" aria-label="Schematic map of central Gothenburg showing ten shortlisted hotels, the cool districts, and the airport coach stops">
+    <defs>
+      <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--sea)" stop-opacity=".30"/>
+        <stop offset="1" stop-color="var(--sea)" stop-opacity=".12"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="1000" height="873" fill="var(--chip)" rx="4"/>
+    <path d="M77.8,-20.8 211.1,37.4 388.9,95.6 588.9,124.7 788.9,145.5 1000,153.8 L1000,-40 L0,-40 Z"
+          fill="url(#water)"/>
+    <polyline points="77.8,-20.8 211.1,37.4 388.9,95.6 588.9,124.7 788.9,145.5 1000,153.8"
+          fill="none" stroke="var(--sea)" stroke-opacity=".45" stroke-width="3"/>
+    <text x="150" y="88" class="mlab" fill="var(--sea)" font-size="19" font-style="italic"
+          font-family="ui-serif,Georgia,serif" opacity=".85">G&#246;ta &#228;lv</text>
+    <polyline points="266.7,353.4 282.2,478.1 388.9,569.5 522.2,582.0 628.9,528.0 660.0,415.7"
+          fill="none" stroke="var(--sea)" stroke-opacity=".38" stroke-width="9" stroke-linecap="round"/>
+    <text x="452" y="612" fill="var(--sea)" font-size="15" font-style="italic" text-anchor="middle"
+          font-family="ui-serif,Georgia,serif" opacity=".8">Vallgraven</text>
+
+    <circle cx="150" cy="620" r="132" fill="var(--moss)" opacity=".13"/>
+    <text x="150" y="770" fill="var(--moss)" font-size="17" text-anchor="middle" font-weight="600"
+          font-family="ui-sans-serif,-apple-system,sans-serif">Haga &middot; J&#228;rntorget</text>
+    <text x="150" y="792" fill="var(--ink-3)" font-size="13" text-anchor="middle"
+          font-family="ui-sans-serif,-apple-system,sans-serif">the cool core</text>
+    <text x="389" y="470" fill="var(--moss)" font-size="14" text-anchor="middle" font-weight="600"
+          font-family="ui-sans-serif,-apple-system,sans-serif">Magasinsgatan</text>
+
+    <g font-family="ui-sans-serif,-apple-system,sans-serif">
+      <rect x="524" y="196" width="132" height="26" rx="13" fill="var(--panel)" stroke="var(--line-2)"/>
+      <text x="590" y="214" fill="var(--ink-2)" font-size="13" text-anchor="middle">Nils Ericson</text>
+      <rect x="836" y="736" width="150" height="26" rx="13" fill="var(--panel)" stroke="var(--line-2)"/>
+      <text x="911" y="754" fill="var(--ink-2)" font-size="13" text-anchor="middle">Korsv&#228;gen</text>
+      <text x="733" y="588" fill="var(--ink-3)" font-size="14" text-anchor="middle" font-style="italic">Avenyn</text>
+    </g>
+
+    <g stroke="var(--panel)" stroke-width="3" font-family="ui-sans-serif,-apple-system,sans-serif"
+       font-size="16" font-weight="700" text-anchor="middle">
+      <g><circle cx="703.0" cy="663.4" r="21" fill="var(--sea)"/><text x="703" y="669" fill="#fff" stroke="none">1</text></g>
+      <g><circle cx="781.8" cy="544.3" r="18" fill="var(--sea)"/><text x="781.8" y="550" fill="#fff" stroke="none">2</text></g>
+      <g><circle cx="825.6" cy="650.5" r="18" fill="var(--sand)"/><text x="825.6" y="656" fill="#3a2f0c" stroke="none">3</text></g>
+      <g><circle cx="146.6" cy="569.8" r="18" fill="var(--sand)"/><text x="146.6" y="575" fill="#3a2f0c" stroke="none">4</text></g>
+      <g><circle cx="571.7" cy="336.9" r="18" fill="var(--sand)"/><text x="571.7" y="342" fill="#3a2f0c" stroke="none">5</text></g>
+      <g><circle cx="483.1" cy="437.8" r="18" fill="var(--rose)"/><text x="483.1" y="443" fill="#fff" stroke="none">6</text></g>
+      <g><circle cx="862.2" cy="626.9" r="18" fill="var(--sand)"/><text x="862.2" y="632" fill="#3a2f0c" stroke="none">7</text></g>
+      <g><circle cx="568.5" cy="220.2" r="18" fill="var(--sand)"/><text x="568.5" y="226" fill="#3a2f0c" stroke="none">8</text></g>
+      <g><circle cx="422.0" cy="486.8" r="18" fill="var(--sand)"/><text x="422" y="492" fill="#3a2f0c" stroke="none">9</text></g>
+      <g><circle cx="364.2" cy="388.6" r="18" fill="var(--rose)"/><text x="364.2" y="394" fill="#fff" stroke="none">10</text></g>
+    </g>
+
+    <g font-family="ui-sans-serif,-apple-system,sans-serif" font-size="13" fill="var(--ink-2)">
+      <text x="731" y="700">Elite Park Avenue</text>
+      <text x="806" y="524">Heden</text>
+      <text x="850" y="686">Lorensberg</text>
+      <text x="175" y="551">Draken</text>
+      <text x="597" y="318">Royal</text>
+      <text x="508" y="419">Avalon</text>
+      <text x="845" y="600" text-anchor="end">Onyxen</text>
+      <text x="594" y="202">Hyatt Place</text>
+      <text x="447" y="468">Flora</text>
+      <text x="340" y="370" text-anchor="end">Elite Plaza</text>
+    </g>
+
+    <g font-family="ui-sans-serif,-apple-system,sans-serif" font-size="12" fill="var(--ink-3)">
+      <line x1="60" y1="838" x2="246.8" y2="838" stroke="var(--ink-3)" stroke-width="2"/>
+      <line x1="60" y1="832" x2="60" y2="844" stroke="var(--ink-3)" stroke-width="2"/>
+      <line x1="246.8" y1="832" x2="246.8" y2="844" stroke="var(--ink-3)" stroke-width="2"/>
+      <text x="153" y="828" text-anchor="middle">500 m</text>
+    </g>
+  </svg>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--sea)"></i> At or under &pound;100 a night</span>
+    <span><i class="dot" style="background:var(--sand)"></i> &pound;101&ndash;140 &mdash; a stretch</span>
+    <span><i class="dot" style="background:var(--rose)"></i> Over &pound;140</span>
+    <span><i class="dot" style="background:var(--moss);opacity:.5"></i> Cool districts</span>
+    <span style="color:var(--ink-3)">Schematic. Hotel positions are real coordinates; water is simplified.</span>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>The ten, ranked by luxury per pound</h2>
+  <p class="sub">Ranked on the value index below &mdash; how luxurious the hotel feels, divided by what it costs.
+  The bar shows the raw luxury score out of 100, so you can see what you give up as you go down the list.</p>
+  <div class="cards">
+
+    <article class="card hero">
+      <div class="cb">
+        <div class="rank"><span class="badge alt">1 &middot; the pick</span><span>Best value in the city</span></div>
+        <h3>Elite Park Avenue Hotel</h3>
+        <div class="cmeta">4&#9733; &middot; Kungsportsavenyn 36&ndash;38, Avenyn &middot; 8.3 from 4,619 reviews</div>
+        <div class="price-row">
+          <span class="price-big">&pound;98.66</span><span class="price-sm">a night &middot; &pound;197.32 for the two nights &middot; breakfast in</span>
+        </div>
+        <div class="barlab"><span>Luxury feel 69/100</span><span>0.70 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:69%"></i></div>
+        <p>A grand 1950s hotel on Gothenburg&rsquo;s main boulevard, refurbished, with a private art gallery
+        in the lobby. The reason it wins is the wellness floor: a year-round heated indoor pool, two saunas,
+        a steam room, a plunge pool and a spa. Nothing else in the city under &pound;150 a night has any of
+        that. Reviewers single out the breakfast buffet, and the airport coach stops outside the door.</p>
+        <ul class="pros">
+          <li class="y">Pool, two saunas, steam room and spa &mdash; unmatched at this price</li>
+          <li class="y">Comes in &pound;1.34 <i>under</i> your &pound;100 budget, breakfast included</li>
+          <li class="y">Flygbussarna &ldquo;Park Avenue&rdquo; stop at the door, 20&ndash;25 min to Landvetter</li>
+          <li class="n">The Avenyn is the busy tourist boulevard, not a cool backstreet &mdash; 12 min walk to Magasinsgatan</li>
+          <li class="n">8.3 is a good score, not a great one; the building is grand rather than charming</li>
+        </ul>
+        <div class="cats">960 m to Magasinsgatan &middot; 1.4 km to Haga &middot; 620 m to Korsv&auml;gen</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/elite-park-avenue.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb">
+        <div class="rank"><span class="badge gold">2 &middot; cheapest that still feels like a hotel</span></div>
+        <h3>Hotell Heden &mdash; BW Signature Collection</h3>
+        <div class="cmeta">4&#9733; &middot; Sten Sturegatan 1, Heden &middot; 8.2 from 7,766 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;77.03</span><span class="price-sm">a night &middot; &pound;154.06 total</span></div>
+        <div class="barlab"><span>Luxury feel 48/100</span><span>0.63 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:48%"></i></div>
+        <p>The cheapest four-star in the city on these dates, and it still gives you a sauna, a steam room
+        and a gym. Plain, well-run, and &pound;23 a night under budget &mdash; which is two very good dinners
+        across the stay. Take this if you would rather spend the money on food than on the room.</p>
+        <ul class="pros">
+          <li class="y">&pound;46 cheaper than the pick across two nights</li>
+          <li class="y">Sauna, steam room and gym at a three-star price</li>
+          <li class="n">No pool, and the interiors are functional</li>
+          <li class="n">Heden is an open sports field &mdash; convenient, not charming</li>
+        </ul>
+        <div class="cats">1.1 km to Magasinsgatan &middot; 670 m to Korsv&auml;gen</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/hotellheden.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge alt">3</span><span>Quiet and green</span></div>
+        <h3>Hotel Lorensberg</h3>
+        <div class="cmeta">3&#9733; &middot; Berzeliigatan 15, Lorensberg &middot; 8.6 from 4,572 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;102.96</span><span class="price-sm">a night &middot; &pound;205.92 total</span></div>
+        <div class="barlab"><span>Luxury feel 55/100</span><span>0.53 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:55%"></i></div>
+        <p>A small hotel on a quiet leafy street behind the Avenyn, with its own garden and terrace and a
+        sauna. The 8.6 score is well above anything else near this price, and it is the calmest address on
+        the list. The airport coach stops on Berzeliigatan, so the Wednesday morning is trivial.</p>
+        <ul class="pros">
+          <li class="y">8.6 score &mdash; the best under &pound;110 a night</li>
+          <li class="y">Garden, terrace and sauna; genuinely quiet street</li>
+          <li class="y">Airport coach stop on its own street, 370 m to Korsv&auml;gen</li>
+          <li class="n">Three-star fittings; no pool</li>
+        </ul>
+        <div class="cats">1.25 km to Magasinsgatan &middot; 1.8 km to Haga</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/lorensberg.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">4 &middot; best neighbourhood</span></div>
+        <h3>Clarion Hotel Draken</h3>
+        <div class="cmeta">4&#9733; &middot; Olof Palmes plats 2, J&auml;rntorget &middot; 8.7 from 5,176 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;139.77</span><span class="price-sm">a night &middot; &pound;279.54 total</span></div>
+        <div class="barlab"><span>Luxury feel 74/100</span><span>0.53 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:74%"></i></div>
+        <p>Opened in 2024 on J&auml;rntorget, 150 m from the square itself and 170 m from Haga. If &ldquo;cool
+        neighbourhood&rdquo; is the part of the brief you care most about, this is the answer &mdash; the
+        L&aring;nggatorna bars and the best restaurants in the city are on the doorstep. Spa and wellness centre,
+        gym, rooftop terrace, air conditioning, and the second-highest luxury score on the list.</p>
+        <ul class="pros">
+          <li class="y">The only hotel actually <i>in</i> the cool district &mdash; 150 m to J&auml;rntorget</li>
+          <li class="y">Newest hotel here, with spa, gym and terrace</li>
+          <li class="n">&pound;40 a night over budget &mdash; &pound;82 more than the pick across two nights</li>
+          <li class="n">Big (over 300 rooms) and chain-run; furthest from the airport coach</li>
+        </ul>
+        <div class="cats">150 m to J&auml;rntorget &middot; 170 m to Haga &middot; breakfast adds &pound;33.67 over the room-only rate</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/clarion-draken.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">5 &middot; most charming</span></div>
+        <h3>Hotel Royal</h3>
+        <div class="cmeta">3&#9733; &middot; Drottninggatan 67, Inom Vallgraven &middot; 9.1 from 4,459 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;119.01</span><span class="price-sm">a night &middot; &pound;238.02 total</span></div>
+        <div class="barlab"><span>Luxury feel 62/100</span><span>0.52 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:62%"></i></div>
+        <p>Gothenburg&rsquo;s oldest hotel, run by the same family since 1852, with a hand-painted glass
+        ceiling above the original stairwell. It carries a <b>9.1</b> &mdash; the highest score of anything
+        within &pound;40 of your budget &mdash; and sits inside the old moat, 630 m from Magasinsgatan. If you
+        want the two nights to feel like a honeymoon rather than a city stop, this is the building.</p>
+        <ul class="pros">
+          <li class="y">9.1 guest score, the best near the budget</li>
+          <li class="y">Real period character; 330 m from the airport coach terminal</li>
+          <li class="n">No pool, sauna or spa at all &mdash; the wellness score is zero</li>
+          <li class="n">&pound;19 a night over budget</li>
+        </ul>
+        <div class="cats">630 m to Magasinsgatan &middot; 1.3 km to Haga &middot; 330 m to Nils Ericson</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/hotelroyalgoteborg.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">6 &middot; most luxurious overall</span></div>
+        <h3>Avalon Hotel</h3>
+        <div class="cmeta">4&#9733; &middot; Kungstorget 9, Inom Vallgraven &middot; 9.0 from 1,080 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;156.75</span><span class="price-sm">a night &middot; &pound;313.51 total</span></div>
+        <div class="barlab"><span>Luxury feel 79/100</span><span>0.50 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:79%"></i></div>
+        <p>The highest raw luxury score on the whole list: a design hotel on Kungstorget with a
+        <b>heated rooftop pool</b> looking over the city, a sun terrace, an art programme and a 9.0 score.
+        280 m from Magasinsgatan. It is the best hotel here in absolute terms &mdash; it simply costs 59%
+        more than the pick to get there.</p>
+        <ul class="pros">
+          <li class="y">Heated rooftop pool with a view; the strongest all-round hotel quoted</li>
+          <li class="y">280 m to Magasinsgatan, 1 km to Haga</li>
+          <li class="n">&pound;116 more than the pick across the two nights</li>
+          <li class="n">Rooftop pool is seasonal &mdash; confirm it is open in September before booking</li>
+        </ul>
+        <div class="cats">280 m to Magasinsgatan &middot; 660 m to Nils Ericson</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/avalon.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">7</span><span>Adults only</span></div>
+        <h3>Hotell Onyxen &mdash; Adults Only</h3>
+        <div class="cmeta">4&#9733; &middot; Sten Sturegatan 23, Lorensberg &middot; 8.8 from 1,990 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;136.34</span><span class="price-sm">a night &middot; &pound;272.68 total</span></div>
+        <div class="barlab"><span>Luxury feel 63/100</span><span>0.46 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:63%"></i></div>
+        <p>A WorldHotels boutique with a spa and wellness centre, and &mdash; unusually &mdash; no children
+        anywhere on the property. For a honeymoon that is a real feature. 8.8 score, 380 m from the
+        Korsv&auml;gen coach stop.</p>
+        <ul class="pros">
+          <li class="y">Adults only; spa and wellness centre; 8.8 score</li>
+          <li class="n">&pound;36 a night over budget, and 1.3 km from the cool districts</li>
+        </ul>
+        <div class="cats">1.3 km to Magasinsgatan &middot; 380 m to Korsv&auml;gen</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/hotell-onyxen-adults-only-worldhotels-crated.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">8</span><span>The pragmatic one</span></div>
+        <h3>Hyatt Place Gothenburg Central</h3>
+        <div class="cmeta">4&#9733; &middot; Nils Ericssonsplatsen 4 &middot; 8.5 from 4,899 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;110.92</span><span class="price-sm">a night &middot; &pound;221.84 total</span></div>
+        <div class="barlab"><span>Luxury feel 51/100</span><span>0.46 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:51%"></i></div>
+        <p>Included for one reason: it is <b>60 m from the airport coach terminal</b>, which on a Wednesday
+        with a 13:30 flight is worth something. Reliable, sauna and gym, 8.5 score. It is also the least
+        romantic hotel on this list, and reads as a business hotel throughout.</p>
+        <ul class="pros">
+          <li class="y">60 m from Nils Ericson &mdash; the easiest possible departure morning</li>
+          <li class="y">Sauna and gym; consistent 8.5 across 4,899 reviews</li>
+          <li class="n">No character at all &mdash; wrong choice for a honeymoon night</li>
+        </ul>
+        <div class="cats">860 m to Magasinsgatan &middot; 60 m to Nils Ericson</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/first-g.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">9 &middot; best location</span></div>
+        <h3>Hotel Flora</h3>
+        <div class="cmeta">4&#9733; &middot; Gr&ouml;nsakstorget 2, Inom Vallgraven &middot; 8.4 from 2,296 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;117.34</span><span class="price-sm">a night &middot; &pound;234.67 total</span></div>
+        <div class="barlab"><span>Luxury feel 53/100</span><span>0.45 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:53%"></i></div>
+        <p>A small design hotel with a courtyard, sitting <b>90 m from Magasinsgatan</b> &mdash; the best pure
+        location of anything quoted. Everything you would actually walk to is within ten minutes. The
+        trade is that there is no wellness offer whatsoever, which is what pushes it down the value index.</p>
+        <ul class="pros">
+          <li class="y">90 m to Magasinsgatan, 790 m to Haga &mdash; the most walkable address here</li>
+          <li class="y">Design hotel with a quiet interior courtyard</li>
+          <li class="n">No pool, sauna or gym; rooms are small</li>
+        </ul>
+        <div class="cats">90 m to Magasinsgatan &middot; 790 m to Haga</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/flora.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="cb"><div class="rank"><span class="badge">10 &middot; the grand one</span></div>
+        <h3>Elite Plaza Hotel</h3>
+        <div class="cmeta">4&#9733; &middot; V&auml;stra Hamngatan 3, Inom Vallgraven &middot; 8.5 from 3,487 reviews</div>
+        <div class="price-row"><span class="price-big">&pound;161.06</span><span class="price-sm">a night &middot; &pound;322.11 total</span></div>
+        <div class="barlab"><span>Luxury feel 69/100</span><span>0.43 luxury per &pound;</span></div>
+        <div class="bar"><i style="width:69%"></i></div>
+        <p>An 1889 insurance palace with stucco ceilings, mosaic floors and marble stairs &mdash; the most
+        architecturally impressive building you can sleep in here short of Dorsia. 270 m from Magasinsgatan,
+        sauna and gym. It scores exactly the same luxury total as the pick, at &pound;62 a night more, which
+        is the cleanest illustration of why Elite Park Avenue wins.</p>
+        <ul class="pros">
+          <li class="y">Genuinely grand period building; excellent central position</li>
+          <li class="n">Same luxury score as the &pound;98.66 pick, for &pound;125 more across two nights</li>
+        </ul>
+        <div class="cats">270 m to Magasinsgatan &middot; 840 m to Haga</div>
+        <a class="cta" href="https://www.booking.com/hotel/se/elite-plaza.html?checkin=2026-08-31&amp;checkout=2026-09-02&amp;no_rooms=1&amp;group_adults=2&amp;selected_currency=GBP">See the live rate</a>
+      </div>
+    </article>
+
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Everything I quoted</h2>
+  <p class="sub">All twenty-one, cheapest first. Live quotes from Booking.com on 29 August 2026 for
+  31 August &ndash; 2 September, two adults, one room, breakfast included. The shortlist is highlighted.</p>
+  <div class="tw">
+  <table>
+    <thead><tr>
+      <th>Hotel</th><th class="num">&pound;/night</th><th class="num">2-night total</th>
+      <th class="num">Score</th><th>Stars</th><th class="wide">District</th>
+      <th class="num">Luxury</th><th class="num">Lux&nbsp;/&nbsp;&pound;</th><th>Wellness</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Hotell Heden BW Signature <span class="tag ok">2</span></td><td class="num">77.03</td><td class="num">154.06</td><td class="num">8.2</td><td>4&#9733;</td><td class="wide">Heden</td><td class="num">48</td><td class="num">0.63</td><td>Sauna, steam, gym</td></tr>
+      <tr><td>Spar Hotel G&aring;rda</td><td class="num">77.10</td><td class="num">154.19</td><td class="num">8.3</td><td>3&#9733;</td><td class="wide">G&aring;rda</td><td class="num">35</td><td class="num">0.46</td><td>Sauna, gym</td></tr>
+      <tr><td>Spar Hotel Majorna</td><td class="num">79.59</td><td class="num">159.17</td><td class="num">8.2</td><td>3&#9733;</td><td class="wide">Majorna</td><td class="num">36</td><td class="num">0.46</td><td>Sauna, gym</td></tr>
+      <tr><td>Comfort Hotel Panorama</td><td class="num">95.71</td><td class="num">191.42</td><td class="num">8.1</td><td>4&#9733;</td><td class="wide">Johanneberg</td><td class="num">40</td><td class="num">0.42</td><td>Sauna, jacuzzi</td></tr>
+      <tr class="pick"><td><b>Elite Park Avenue</b> <span class="tag ok">1</span></td><td class="num"><b>98.66</b></td><td class="num"><b>197.32</b></td><td class="num">8.3</td><td>4&#9733;</td><td class="wide">Avenyn</td><td class="num"><b>69</b></td><td class="num"><b>0.70</b></td><td>Pool, 2 saunas, steam, spa</td></tr>
+      <tr><td>Quality Hotel The Book</td><td class="num">101.72</td><td class="num">203.43</td><td class="num">8.1</td><td>4&#9733;</td><td class="wide">Liseberg</td><td class="num">30</td><td class="num">0.30</td><td>Gym</td></tr>
+      <tr class="pick"><td>Hotel Lorensberg <span class="tag ok">3</span></td><td class="num">102.96</td><td class="num">205.92</td><td class="num">8.6</td><td>3&#9733;</td><td class="wide">Lorensberg</td><td class="num">55</td><td class="num">0.53</td><td>Sauna, garden</td></tr>
+      <tr><td>Hotel Vanilla</td><td class="num">107.11</td><td class="num">214.22</td><td class="num">8.4</td><td>3&#9733;</td><td class="wide">Inom Vallgraven</td><td class="num">46</td><td class="num">0.43</td><td>None</td></tr>
+      <tr class="pick"><td>Hyatt Place Central <span class="tag ok">8</span></td><td class="num">110.92</td><td class="num">221.84</td><td class="num">8.5</td><td>4&#9733;</td><td class="wide">Centralstationen</td><td class="num">51</td><td class="num">0.46</td><td>Sauna, gym</td></tr>
+      <tr><td>Scandic No. 25</td><td class="num">112.96</td><td class="num">225.92</td><td class="num">8.1</td><td>4&#9733;</td><td class="wide">Centrum</td><td class="num">36</td><td class="num">0.32</td><td>Gym</td></tr>
+      <tr class="pick"><td>Hotel Flora <span class="tag ok">9</span></td><td class="num">117.34</td><td class="num">234.67</td><td class="num">8.4</td><td>4&#9733;</td><td class="wide">Gr&ouml;nsakstorget</td><td class="num">53</td><td class="num">0.45</td><td>None</td></tr>
+      <tr class="pick"><td>Hotel Royal <span class="tag ok">5</span></td><td class="num">119.01</td><td class="num">238.02</td><td class="num">9.1</td><td>3&#9733;</td><td class="wide">Inom Vallgraven</td><td class="num">62</td><td class="num">0.52</td><td>None</td></tr>
+      <tr><td>Home Hotel Mektagonen</td><td class="num">120.01</td><td class="num">240.02</td><td class="num">8.8</td><td>4&#9733;</td><td class="wide">M&ouml;lndalsv&auml;gen</td><td class="num">33</td><td class="num">0.28</td><td>Gym, terrace</td></tr>
+      <tr class="pick"><td>Hotell Onyxen Adults Only <span class="tag ok">7</span></td><td class="num">136.34</td><td class="num">272.68</td><td class="num">8.8</td><td>4&#9733;</td><td class="wide">Lorensberg</td><td class="num">63</td><td class="num">0.46</td><td>Spa, gym</td></tr>
+      <tr class="pick"><td>Clarion Hotel Draken <span class="tag ok">4</span></td><td class="num">139.77</td><td class="num">279.54</td><td class="num">8.7</td><td>4&#9733;</td><td class="wide">J&auml;rntorget</td><td class="num">74</td><td class="num">0.53</td><td>Spa, gym, terrace</td></tr>
+      <tr class="pick"><td>Avalon Hotel <span class="tag ok">6</span></td><td class="num">156.75</td><td class="num">313.51</td><td class="num">9.0</td><td>4&#9733;</td><td class="wide">Kungstorget</td><td class="num">79</td><td class="num">0.50</td><td>Rooftop pool</td></tr>
+      <tr class="pick"><td>Elite Plaza Hotel <span class="tag ok">10</span></td><td class="num">161.06</td><td class="num">322.11</td><td class="num">8.5</td><td>4&#9733;</td><td class="wide">Inom Vallgraven</td><td class="num">69</td><td class="num">0.43</td><td>Sauna, gym</td></tr>
+      <tr><td>Hotel Riverton</td><td class="num">166.00</td><td class="num">331.99</td><td class="num">8.4</td><td>4&#9733;</td><td class="wide">Masthugget</td><td class="num">67</td><td class="num">0.40</td><td>Spa, hammam, sauna</td></tr>
+      <tr><td>Hotel Eggers</td><td class="num">174.97</td><td class="num">349.94</td><td class="num">8.9</td><td>4&#9733;</td><td class="wide">Drottningtorget</td><td class="num">61</td><td class="num">0.35</td><td>None</td></tr>
+      <tr><td>Hotel Pigalle</td><td class="num">207.29</td><td class="num">414.57</td><td class="num">8.7</td><td>5&#9733;</td><td class="wide">S&ouml;dra Hamngatan</td><td class="num">65</td><td class="num">0.31</td><td>Gym</td></tr>
+      <tr><td>Dorsia Hotel &amp; Restaurant</td><td class="num">272.61</td><td class="num">545.21</td><td class="num">9.3</td><td>5&#9733;</td><td class="wide">Tr&auml;dg&aring;rdsgatan</td><td class="num">73</td><td class="num">0.27</td><td>Adults only</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Where the &pound;100 line actually falls</h2>
+  <p class="sub">The budget is tighter than it looks, and that changes the answer.</p>
+  <div class="two">
+    <div class="box">
+      <h3>Only five hotels come in at or under &pound;100</h3>
+      <p style="font-size:14.5px">Of twenty-one quoted, five land at or below your budget with breakfast:
+      Heden (&pound;77.03), Spar G&aring;rda (&pound;77.10), Spar Majorna (&pound;79.59), Comfort Panorama
+      (&pound;95.71) and Elite Park Avenue (&pound;98.66).</p>
+      <p style="font-size:14.5px">Three of those five are plain chain hotels in unremarkable districts.
+      One, Panorama, is a conference hotel out at Johanneberg. That leaves exactly <b>one</b> hotel that is
+      both inside the budget and genuinely nice &mdash; which is why the recommendation is not a close call.</p>
+    </div>
+    <div class="box">
+      <h3>Your midweek timing is doing the heavy lifting</h3>
+      <p style="font-size:14.5px">Your own brief measured a four-fold weekend premium in this city:
+      &pound;272 a night on the arrival weekend against &pound;64 the following midweek. These quotes confirm
+      the second half of that. A four-star with a pool at &pound;98.66 is a genuinely low late-summer rate,
+      and it exists only because you moved the city nights to Monday and Tuesday.</p>
+      <p style="font-size:14.5px">The decision to sleep in the countryside on the festival weekend is
+      still the single most valuable call in the whole trip.</p>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>How I ranked them</h2>
+  <p class="sub">The index, so you can disagree with it.</p>
+  <div class="box">
+    <p style="font-size:14.5px">Every hotel gets a <b>luxury feel</b> score out of 100, built from four
+    parts, then divided by the nightly price to give luxury per pound.</p>
+    <ul style="font-size:14.5px">
+      <li><b>Wellness, 0&ndash;25.</b> Pool, spa, sauna, steam room, jacuzzi. Weighted hardest, because it
+      is the thing that most separates a holiday from a bed, and the first thing cut at this price.</li>
+      <li><b>Character, 0&ndash;25.</b> Period architecture and design pedigree. The one editorial
+      judgement here &mdash; Dorsia scores 25, a Spar Hotel scores 5.</li>
+      <li><b>Guest rating, 0&ndash;25.</b> Booking.com score, scaled so 7.5 is zero and 9.5 is full marks.</li>
+      <li><b>Neighbourhood, 0&ndash;25.</b> Measured straight-line distance to the nearest of Haga,
+      J&auml;rntorget or Magasinsgatan, losing 8 points per kilometre.</li>
+    </ul>
+    <p style="font-size:14.5px;margin-top:14px">Three of the four are measured from data. Character is
+    mine, and it is the one you might score differently &mdash; if you weight it higher, Hotel Royal and
+    Elite Plaza climb and Elite Park Avenue slips to second. Five properties scoring under 40 were cut
+    from the shortlist as too plain to count as a honeymoon night, however cheap: both Spar hotels,
+    Scandic No. 25, Quality The Book and Home Mektagonen.</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Practical notes for these two nights</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Wednesday morning, 13:30 flight</h3>
+      <ul>
+        <li>Flygbussarna runs Nils Ericson &rarr; Kungsportsplatsen &rarr; <b>Park Avenue</b> &rarr;
+        Berzeliigatan &rarr; Korsv&auml;gen &rarr; Landvetter, every 20 minutes on weekdays.</li>
+        <li>30 minutes from Nils Ericson, <b>20 minutes from Korsv&auml;gen</b>. Tickets from SEK 99.</li>
+        <li>From Elite Park Avenue or Lorensberg you board at the door and reach the airport in
+        about 25 minutes &mdash; leave at 10:45 for an 11:30 arrival, after a full breakfast.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Before you book</h3>
+      <ul>
+        <li><b>Do not pay for parking.</b> The car goes back on Monday, so every hotel parking charge on
+        these listings is irrelevant to you &mdash; the city leg is walking, tram and ferry.</li>
+        <li><b>Check the breakfast line.</b> Elite, Avalon, Lorensberg, Vanilla and Onyxen include it in
+        the rate. Clarion Draken adds &pound;33.67 and Riverton &pound;23.11 for the two of you over two nights.</li>
+        <li><b>Check cancellation terms at the point of booking</b> &mdash; I did not filter for free
+        cancellation, so the cheapest rate shown may be prepaid and non-refundable.</li>
+        <li>You are booking two days out. These rates are live now and will move; treat the totals as
+        accurate at 29 August, not guaranteed.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p class="conf"><b>Evidence.</b> All prices are <b>live quotes</b> returned by Booking.com on
+  29 August 2026 for 31 August &ndash; 2 September 2026, two adults, one room, breakfast included,
+  priced directly in GBP. Cross-checked against Expedia and Tripadvisor for the same dates; Expedia
+  quotes room-only in USD and ran 10&ndash;20% below the breakfast-inclusive figures here, which is the
+  expected gap. Guest scores and review counts are Booking.com&rsquo;s. Facilities are as listed by each
+  property. Distances are straight-line, computed from the properties&rsquo; own coordinates, so real
+  walking routes run slightly longer.</p>
+  <p class="conf"><b>Currency.</b> Quoted natively in GBP. Where conversion was needed:
+  &pound;1 = SEK 12.96 and &pound;1 = $1.3531, the rates on 28 August 2026. Your brief used
+  &pound;1 = SEK 12.89; the difference moves nothing on this list.</p>
+  <p class="conf"><b>Not verified.</b> Whether Avalon&rsquo;s rooftop pool is open in September, and the
+  cancellation terms attached to each cheapest rate. Both need one call or one look at the booking page.</p>
+</div></footer>
+
+</body>
+</html>
